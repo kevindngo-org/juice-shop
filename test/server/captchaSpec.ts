@@ -24,11 +24,13 @@ describe('captcha', () => {
   let req: any
   let res: any
   let build: any
+  let save: any
 
   beforeEach(() => {
     req = { app: { locals: { captchaId: 0 } } }
     res = { json: sinon.spy() }
-    build = sinon.stub(CaptchaModel, 'build').returns({ async save () {} } as any)
+    save = sinon.spy(async () => {})
+    build = sinon.stub(CaptchaModel, 'build').returns({ save } as any)
   })
 
   afterEach(() => {
@@ -38,12 +40,14 @@ describe('captcha', () => {
   it('should answer the generated arithmetic captcha correctly without using eval', async () => {
     for (let i = 0; i < 200; i++) {
       res.json.resetHistory()
+      save.resetHistory()
 
       await captchas()(req, res)
 
       const captcha = res.json.firstCall.args[0]
       expect(captcha.captcha).to.match(/^\d+[*+-]\d+[*+-]\d+$/)
       expect(Number(captcha.answer)).to.equal(referenceAnswer(captcha.captcha))
+      expect(save.calledOnce).to.equal(true)
     }
   })
 })
