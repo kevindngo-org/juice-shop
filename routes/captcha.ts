@@ -7,6 +7,26 @@ import { type Request, type Response, type NextFunction } from 'express'
 import { type Captcha } from '../data/types'
 import { CaptchaModel } from '../models/captcha'
 
+// Safely evaluates an arithmetic expression composed of the operators '*', '+'
+// and '-', honouring multiplication precedence, without resorting to eval().
+function evaluateExpression (terms: number[], operators: string[]): number {
+  const values = [terms[0]]
+  const additiveOperators: string[] = []
+  for (let i = 0; i < operators.length; i++) {
+    if (operators[i] === '*') {
+      values[values.length - 1] *= terms[i + 1]
+    } else {
+      additiveOperators.push(operators[i])
+      values.push(terms[i + 1])
+    }
+  }
+  let result = values[0]
+  for (let i = 0; i < additiveOperators.length; i++) {
+    result = additiveOperators[i] === '+' ? result + values[i + 1] : result - values[i + 1]
+  }
+  return result
+}
+
 export function captchas () {
   return async (req: Request, res: Response) => {
     const captchaId = req.app.locals.captchaId++
@@ -20,7 +40,7 @@ export function captchas () {
     const secondOperator = operators[Math.floor((Math.random() * 3))]
 
     const expression = firstTerm.toString() + firstOperator + secondTerm.toString() + secondOperator + thirdTerm.toString()
-    const answer = eval(expression).toString() // eslint-disable-line no-eval
+    const answer = evaluateExpression([firstTerm, secondTerm, thirdTerm], [firstOperator, secondOperator]).toString()
 
     const captcha = {
       captchaId,
